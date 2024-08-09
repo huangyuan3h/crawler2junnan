@@ -37,7 +37,7 @@ const fetchHTML = async (row) => {
   }
 
   try {
-    const response = await fetch(url, { timeout: 5000 }); // 设置5秒超时
+    const response = await fetchWithTimeout(url, {}, 5000); // 设置5秒超时
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -69,6 +69,25 @@ function getTextFromHTML(htmlString) {
 
   // 去除多余的空白字符
   return text.trim().replace(/\s+/g, " ");
+}
+
+async function fetchWithTimeout(url, options = {}, timeout = 5000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  options.signal = controller.signal;
+
+  try {
+    const response = await fetch(url, options);
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      console.error(`Request to ${url} timed out after ${timeout}ms`);
+    } else {
+      console.error(`Request to ${url} failed:`, error.message);
+    }
+    throw error;
+  }
 }
 
 const processSingle = async (fileName) => {
