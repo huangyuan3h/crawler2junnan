@@ -1,10 +1,10 @@
 const xlsx = require("xlsx");
-const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 const cheerio = require("cheerio");
 
-const directoryPath = __dirname;
+const execPath = process.execPath;
+const execDir = path.dirname(execPath);
 
 function isValidURL(string) {
   const urlPattern = new RegExp(
@@ -37,8 +37,11 @@ const fetchHTML = async (row) => {
   }
 
   try {
-    const response = await axios.get(url, { timeout: 5000 }); // 设置5秒超时
-    return response.data;
+    const response = await fetch(url, { timeout: 5000 }); // 设置5秒超时
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.text();
   } catch (error) {
     console.error(`Failed to fetch URL: ${url}`, error.message);
     return null; // 如果获取失败，返回 null
@@ -68,8 +71,9 @@ function getTextFromHTML(htmlString) {
   return text.trim().replace(/\s+/g, " ");
 }
 
-const process = async (fileName) => {
-  const workbook = xlsx.readFile(fileName);
+const processSingle = async (fileName) => {
+  const xlsxFilePath = path.join(execDir, fileName);
+  const workbook = xlsx.readFile(xlsxFilePath);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
   const lines = xlsx.utils.sheet_to_json(sheet, { header: 1 });
@@ -94,20 +98,22 @@ const process = async (fileName) => {
       sheet[cellAddress] = { t: "s", v: "Failed to fetch content" };
     }
   }
-  xlsx.writeFile(workbook, `output_${fileName}`);
+  const outXlsxFilePath = path.join(execDir, `output_${fileName}`);
+  xlsx.writeFile(workbook, outXlsxFilePath);
 };
 
-fs.readdir(directoryPath, (err, files) => {
+fs.readdir(execDir, (err, files) => {
   if (err) {
     return console.error("Unable to scan directory:", err);
   }
 
+  console.log(execDir);
   const xlsxFiles = files.filter((file) => path.extname(file) === ".xlsx");
 
   if (xlsxFiles.length > 0) {
     console.log("Found the following .xlsx files:");
     console.log(xlsxFiles);
-    xlsxFiles.forEach((file) => process(file));
+    xlsxFiles.forEach((file) => processSingle(file));
   } else {
     console.log("No .xlsx files found in the directory.");
   }
