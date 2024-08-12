@@ -1,17 +1,46 @@
 {
-  "name": "crawler2junnan",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "crawl-by-excel",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "sst bind next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "yarn@4.4.0",
   "dependencies": {
-    "cheerio": "^1.0.0-rc.12",
-    "xlsx": "^0.18.5"
-  }
+    "@aws-sdk/s3-request-presigner": "^3.627.0",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "axios": "^1.7.3",
+    "cheerio": "^1.0.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "formidable": "^3.5.1",
+    "lucide-react": "^0.427.0",
+    "next": "14.2.5",
+    "open-next": "^3.0.8",
+    "react": "^18",
+    "react-dom": "^18",
+    "swr": "^2.2.5",
+    "tailwind-merge": "^2.5.0",
+    "tailwindcss-animate": "^1.0.7",
+    "xlsx": "^0.18.5",
+    "xlsx-stream": "^0.1.2"
+  },
+  "devDependencies": {
+    "@types/formidable": "^3",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "aws-cdk-lib": "2.142.1",
+    "constructs": "10.3.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5",
+    "postcss": "^8",
+    "sst": "^2.43.4",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  },
+  "packageManager": "yarn@4.4.0"
 }

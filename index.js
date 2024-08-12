@@ -3,8 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const cheerio = require("cheerio");
 
-const execPath = process.execPath;
-const execDir = path.dirname(execPath);
+const execDir = __dirname;
 
 function isValidURL(string) {
   const urlPattern = new RegExp(
@@ -118,13 +117,19 @@ const processSingle = async (fileName) => {
     }
   }
 
-  const outXlsxFilePath = "./output.xlsx";
-
   try {
+    path.join(__dirname, `output_${fileName}`);
     xlsx.writeFile(workbook, outXlsxFilePath);
-    console.log("写入 Excel 文件成功");
-  } catch (err) {
-    console.error("写入 Excel 文件失败:", err);
+
+    console.log(`生成成功`);
+  } catch (e) {
+    try {
+      const outXlsxFilePath = path.join(execDir, `output_${fileName}`);
+      xlsx.writeFile(workbook, outXlsxFilePath);
+      console.log(`生成成功`);
+    } catch (err) {
+      console.log(`生成失败`);
+    }
   }
 };
 
