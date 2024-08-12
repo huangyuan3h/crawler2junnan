@@ -2,13 +2,29 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { uploadFileToS3 } from "@/utils/s3Upload";
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useSWR from "swr";
+import { sendProcess } from "./process/sendProcess";
+import { extractLastPart } from "@/utils/lastPart";
+
+const getUrl = async () => {
+  const response = await (await fetch(`/api/getExcelUrl`)).json();
+  return response.url;
+};
 
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+
+  const { data: url, isLoading } = useSWR(`/api/getExcelUrl`, () => getUrl(), {
+    revalidateOnFocus: false,
+  });
+
+  useEffect(() => {
+    console.log(url);
+  }, [url]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -17,22 +33,19 @@ export default function Home() {
   };
 
   const handleUpload = async () => {
-    setIsLoading(true);
-    if (selectedFile) {
-      const formData = new FormData();
-      formData.append("excelFile", selectedFile);
+    if (selectedFile && url) {
+      const download: string = (await uploadFileToS3(
+        url,
+        selectedFile
+      )) as string;
 
-      try {
-        const response = await axios.post("/api/excel", formData, {
-          responseType: "blob", // 接收blob数据
-        });
-        setDownloadUrl(URL.createObjectURL(response.data));
-      } catch (error) {
-        console.error("上传失败：", error);
-        // 处理上传错误，例如显示错误信息给用户
-      } finally {
-        setIsLoading(false);
-      }
+      setDownloadUrl(download);
+
+      const key = extractLastPart(download);
+
+      sendProcess(key).then((data) => {
+        console.log(data);
+      });
     }
   };
   return (
@@ -50,7 +63,7 @@ export default function Home() {
 
         {downloadUrl && (
           <a href={downloadUrl} download="processed_excel.xlsx">
-            下载处理后的Excel
+            过一会，下载处理后的Excel
           </a>
         )}
       </div>

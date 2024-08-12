@@ -131,3 +131,11 @@ dist
 
 
 *.xlsx
+
+.open-next
+
+.sst
+
+.env
+.env.*
+.env.prod

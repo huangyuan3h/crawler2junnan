@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/s3-request-presigner": "^3.627.0",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "axios": "^1.7.3",
@@ -18,8 +19,10 @@
     "formidable": "^3.5.1",
     "lucide-react": "^0.427.0",
     "next": "14.2.5",
+    "open-next": "^3.0.8",
     "react": "^18",
     "react-dom": "^18",
+    "swr": "^2.2.5",
     "tailwind-merge": "^2.5.0",
     "tailwindcss-animate": "^1.0.7",
     "xlsx": "^0.18.5",
