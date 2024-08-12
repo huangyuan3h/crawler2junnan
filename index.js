@@ -117,8 +117,15 @@ const processSingle = async (fileName) => {
       sheet[cellAddress] = { t: "s", v: "Failed to fetch content" };
     }
   }
-  const outXlsxFilePath = path.join(execDir, `output_${fileName}`);
-  xlsx.writeFile(workbook, outXlsxFilePath);
+
+  const outXlsxFilePath = "./output.xlsx";
+
+  try {
+    xlsx.writeFile(workbook, outXlsxFilePath);
+    console.log("写入 Excel 文件成功");
+  } catch (err) {
+    console.error("写入 Excel 文件失败:", err);
+  }
 };
 
 fs.readdir(execDir, (err, files) => {
