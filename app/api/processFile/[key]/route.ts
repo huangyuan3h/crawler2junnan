@@ -119,6 +119,7 @@ async function getFileFromS3(bucketName: string, key: string): Promise<Buffer> {
 function parseExcelFile(fileBuffer: Buffer): {
   data: ProcessData[];
   worksheet: any;
+  workbook: any;
 } {
   // 确保传入的 fileBuffer 是一个 Buffer
   if (!Buffer.isBuffer(fileBuffer)) {
@@ -137,7 +138,7 @@ function parseExcelFile(fileBuffer: Buffer): {
   const data: ProcessData[] = XLSX.utils.sheet_to_json(worksheet, {
     header: 1,
   });
-  return { data, worksheet };
+  return { data, worksheet, workbook };
 }
 
 function getLastColumnIndex(worksheet: XLSX.WorkSheet): number {
@@ -184,12 +185,27 @@ async function processData(
   return data;
 }
 
-// Function to generate a new Excel file from processed data
-function generateExcelFile(data: ProcessData[]): Buffer {
-  const newWorksheet = XLSX.utils.json_to_sheet(data);
-  const newWorkbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "ProcessedData");
-  return XLSX.write(newWorkbook, { bookType: "xlsx", type: "buffer" });
+// Function to update the worksheet with the processed data
+function updateWorksheetWithProcessedData(
+  worksheet: XLSX.WorkSheet,
+  processedData: ProcessData[]
+): void {
+  // 清空现有的worksheet数据
+  const range = XLSX.utils.decode_range(worksheet["!ref"] || "");
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = { c: C, r: R };
+      delete worksheet[XLSX.utils.encode_cell(cellAddress)];
+    }
+  }
+
+  // 更新worksheet数据
+  XLSX.utils.sheet_add_json(worksheet, processedData, { skipHeader: true });
+}
+
+// Function to generate a new Excel file from the workbook
+function generateExcelFile(workbook: any): Buffer {
+  return XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
 }
 
 // Function to upload the processed Excel file back to S3
@@ -220,17 +236,19 @@ export async function GET(request: Request) {
   );
 
   // Step 2: Parse the Excel file
-  const { data, worksheet } = parseExcelFile(fileBuffer);
+  const { data, worksheet, workbook } = parseExcelFile(fileBuffer);
 
-  // Step 3: Process the data (you'll implement this)
-
+  // Step 3: Process the data
   const num = getLastColumnIndex(worksheet);
   const processedData = await processData(data, num);
 
-  // Step 4: Generate the processed Excel file
-  const processedFileBuffer = generateExcelFile(processedData);
+  // Step 4: Update the worksheet with the processed data
+  updateWorksheetWithProcessedData(worksheet, processedData);
 
-  // Step 5: Upload the processed file back to S3
+  // Step 5: Generate the processed Excel file
+  const processedFileBuffer = generateExcelFile(workbook);
+
+  // Step 6: Upload the processed file back to S3
   await uploadFileToS3(
     process.env.NEXT_PUBLIC_EXCEL_BUCKET ?? "",
     key,
