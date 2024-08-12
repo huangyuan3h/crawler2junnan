@@ -17,6 +17,7 @@ const getUrl = async () => {
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [allProcessed, setAllProcessed] = useState<boolean>(false);
 
   const { data: url, isLoading } = useSWR(`/api/getExcelUrl`, () => getUrl(), {
     revalidateOnFocus: false,
@@ -44,7 +45,7 @@ export default function Home() {
       const key = extractLastPart(download);
 
       sendProcess(key).then((data) => {
-        console.log(data);
+        setAllProcessed(true);
       });
     }
   };
@@ -57,14 +58,16 @@ export default function Home() {
         </div>
         <div className="mt-2">
           <Button onClick={handleUpload} disabled={!selectedFile || isLoading}>
-            {isLoading ? "上传中..." : "上传"}
+            {downloadUrl && !allProcessed ? "上传中..." : "上传"}
           </Button>
         </div>
 
-        {downloadUrl && (
-          <a href={downloadUrl} download="processed_excel.xlsx">
-            过一会，下载处理后的Excel
-          </a>
+        {downloadUrl && allProcessed && (
+          <Button variant="link">
+            <a href={downloadUrl} download="processed_excel.xlsx">
+              下载处理后的Excel
+            </a>
+          </Button>
         )}
       </div>
     </main>

@@ -8,6 +8,8 @@ interface ProcessData {
   [key: string]: any; // 你的数据结构
 }
 
+const MAX_CELL_LENGTH = 32766;
+
 function isValidURL(string: string): boolean {
   const urlPattern = new RegExp(
     "^(https?:\\/\\/)?" + // protocol
@@ -162,7 +164,15 @@ async function processData(
 
     const html = await fetchHTML(url);
     if (html) {
-      const text = getTextFromHTML(html);
+      let text = getTextFromHTML(html);
+      // Check if the text exceeds the maximum allowed length
+      if (text.length > MAX_CELL_LENGTH) {
+        text = text.substring(0, MAX_CELL_LENGTH);
+        console.warn(
+          `Row ${i}: Text truncated to fit within Excel cell limit.`
+        );
+      }
+
       console.log(`Row ${i}:`, text);
       row[nextColumnLetter] = text;
     } else {
