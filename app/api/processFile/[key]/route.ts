@@ -114,7 +114,10 @@ async function getFileFromS3(bucketName: string, key: string): Promise<Buffer> {
 }
 
 // Function to parse the Excel file
-function parseExcelFile(fileBuffer: Buffer): ProcessData[] {
+function parseExcelFile(fileBuffer: Buffer): {
+  data: ProcessData[];
+  worksheet: any;
+} {
   // 确保传入的 fileBuffer 是一个 Buffer
   if (!Buffer.isBuffer(fileBuffer)) {
     throw new Error("Invalid file buffer provided");
@@ -129,13 +132,22 @@ function parseExcelFile(fileBuffer: Buffer): ProcessData[] {
     throw new Error("Worksheet is undefined or invalid");
   }
 
-  const data: ProcessData[] = XLSX.utils.sheet_to_json(worksheet);
-  return data;
+  const data: ProcessData[] = XLSX.utils.sheet_to_json(worksheet, {
+    header: 1,
+  });
+  return { data, worksheet };
+}
+
+function getLastColumnIndex(worksheet: XLSX.WorkSheet): number {
+  const range = XLSX.utils.decode_range(worksheet["!ref"] || "");
+  return range.e.c; // 获取最后一列的索引（从0开始）
 }
 
 // Placeholder for your data processing logic
-async function processData(data: ProcessData[]): Promise<ProcessData[]> {
-  const lastColumnIndex = Object.keys(data[0]).length; // 获取最后一列的索引
+async function processData(
+  data: ProcessData[],
+  lastColumnIndex: number
+): Promise<ProcessData[]> {
   const nextColumnLetter = columnToLetter(lastColumnIndex + 1); // 获取下一列的字母编号
 
   for (let i = 0; i < data.length; i++) {
@@ -198,10 +210,12 @@ export async function GET(request: Request) {
   );
 
   // Step 2: Parse the Excel file
-  const parsedData = parseExcelFile(fileBuffer);
+  const { data, worksheet } = parseExcelFile(fileBuffer);
 
   // Step 3: Process the data (you'll implement this)
-  const processedData = await processData(parsedData);
+
+  const num = getLastColumnIndex(worksheet);
+  const processedData = await processData(data, num);
 
   // Step 4: Generate the processed Excel file
   const processedFileBuffer = generateExcelFile(processedData);
