@@ -25,6 +25,7 @@
     "swr": "^2.2.5",
     "tailwind-merge": "^2.5.0",
     "tailwindcss-animate": "^1.0.7",
+    "uuid": "^10.0.0",
     "xlsx": "^0.18.5",
     "xlsx-stream": "^0.1.2"
   },
@@ -33,6 +34,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/uuid": "^10",
     "aws-cdk-lib": "2.142.1",
     "constructs": "10.3.0",
     "eslint": "^8",

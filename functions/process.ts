@@ -4,11 +4,13 @@ import { Bucket } from "sst/node/bucket";
 import AWS from "aws-sdk";
 import * as XLSX from "xlsx";
 import * as cheerio from "cheerio";
+import { markJobAsFailed, markJobAsSuccess } from "@/utils/dynamoDBHelper";
 
 declare module "sst/node/job" {
   export interface JobTypes {
     process: {
       id: string;
+      jobId: string;
     };
   }
 }
@@ -235,22 +237,42 @@ async function uploadFileToS3(
   await s3.putObject(params).promise();
 }
 
-export const handler = JobHandler("process", async ({ id }) => {
-  const fileBuffer = await getFileFromS3(Bucket.public.bucketName, id);
+export const handler = JobHandler("process", async ({ id, jobId }) => {
+  try {
+    const fileBuffer = await getFileFromS3(Bucket.public.bucketName, id);
 
-  // Step 2: Parse the Excel file
-  const { data, worksheet, workbook } = parseExcelFile(fileBuffer);
+    // Step 2: Parse the Excel file
+    const { data, worksheet, workbook } = parseExcelFile(fileBuffer);
 
-  // Step 3: Process the data
-  const num = getLastColumnIndex(worksheet);
-  const processedData = await processData(data, num);
+    // Step 3: Process the data
+    const num = getLastColumnIndex(worksheet);
+    const processedData = await processData(data, num);
 
-  // Step 4: Update the worksheet with the processed data
-  updateWorksheetWithProcessedData(worksheet, processedData);
+    // Step 4: Update the worksheet with the processed data
+    updateWorksheetWithProcessedData(worksheet, processedData);
 
-  // Step 5: Generate the processed Excel file
-  const processedFileBuffer = generateExcelFile(workbook);
+    // Step 5: Generate the processed Excel file
+    const processedFileBuffer = generateExcelFile(workbook);
 
-  // Step 6: Upload the processed file back to S3
-  await uploadFileToS3(Bucket.public.bucketName, id, processedFileBuffer);
+    // Step 6: Upload the processed file back to S3
+    await uploadFileToS3(Bucket.public.bucketName, id, processedFileBuffer);
+
+    // ***Job Success logic here***
+    console.log("Job completed successfully!");
+    await markJobAsSuccess(jobId);
+    return {
+      success: true,
+      message: "Job completed successfully!",
+      // 可以返回额外信息，例如处理了多少行数据等
+    };
+  } catch (error) {
+    // ***Job Failure logic here***
+    console.error("Job failed:", error);
+    await markJobAsFailed(jobId);
+    return {
+      success: false,
+      message: "Job failed. See logs for details.",
+      error: error, // 可以选择返回具体的错误信息
+    };
+  }
 });
