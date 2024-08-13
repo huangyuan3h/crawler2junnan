@@ -2,7 +2,8 @@ import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
 const dynamoDB = new DynamoDB({});
-const tableName = "JobStatusTable";
+
+const tableName = "dev-crawl-by-excel-JobStatusTable";
 
 interface JobStatus {
   JobId: string;

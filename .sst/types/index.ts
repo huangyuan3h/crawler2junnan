@@ -15,6 +15,15 @@ declare module "sst/node/bucket" {
   }
 }
 
+import "sst/node/table";
+declare module "sst/node/table" {
+  export interface TableResources {
+    "JobStatusTable": {
+      tableName: string;
+    }
+  }
+}
+
 import "sst/node/job";
 declare module "sst/node/job" {
   export interface JobResources {

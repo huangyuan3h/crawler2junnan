@@ -63,7 +63,7 @@ export default function Home() {
           <Input type="file" onChange={handleFileChange} accept=".xlsx, .xls" />
         </div>
         <div className="mt-2">
-          <Button onClick={handleUpload} disabled={!selectedFile || isLoading}>
+          <Button onClick={handleUpload} disabled={!selectedFile}>
             {downloadUrl && !allProcessed ? "上传中..." : "上传"}
           </Button>
         </div>
