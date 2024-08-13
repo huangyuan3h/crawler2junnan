@@ -1,5 +1,6 @@
 import { SSTConfig } from "sst";
 import { Bucket, NextjsSite } from "sst/constructs";
+import { Job } from "sst/constructs";
 
 export default {
   config(_input) {
@@ -10,13 +11,15 @@ export default {
   },
   stacks(app) {
     app.stack(function Site({ stack }) {
-      const bucket = new Bucket(stack, "excel");
+      const bucket = new Bucket(stack, "public");
+
+      const job = new Job(stack, "process", {
+        handler: "functions/process.handler",
+        bind: [bucket],
+      });
 
       const site = new NextjsSite(stack, "site", {
-        bind: [bucket],
-        environment: {
-          NEXT_PUBLIC_EXCEL_BUCKET: process.env.NEXT_PUBLIC_EXCEL_BUCKET ?? "",
-        },
+        bind: [bucket, job],
       });
 
       stack.addOutputs({
