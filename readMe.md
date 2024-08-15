@@ -20,6 +20,8 @@ npm install
 
 ```
 
+复制 excel 到这个文件夹，并且保证网络是全局模式（所有网络请求都会走 proxy）
+
 ```
 node index.js
 ```

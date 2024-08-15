@@ -36,7 +36,7 @@ const fetchHTML = async (row) => {
   }
 
   try {
-    const response = await fetchWithTimeout(url, {}, 5000); // 设置5秒超时
+    const response = await fetchWithTimeout(url, {}, 12000); // 设置5秒超时
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -70,7 +70,7 @@ function getTextFromHTML(htmlString) {
   return text.trim().replace(/\s+/g, " ");
 }
 
-async function fetchWithTimeout(url, options = {}, timeout = 5000) {
+async function fetchWithTimeout(url, options = {}, timeout = 12000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   options.signal = controller.signal;
