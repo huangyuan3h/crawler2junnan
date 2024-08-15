@@ -5,6 +5,7 @@ import AWS from "aws-sdk";
 import * as XLSX from "xlsx";
 import * as cheerio from "cheerio";
 import { markJobAsFailed, markJobAsSuccess } from "@/utils/dynamoDBHelper";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
 declare module "sst/node/job" {
   export interface JobTypes {
@@ -51,7 +52,7 @@ async function fetchHTML(url: string): Promise<string | null> {
   }
 
   try {
-    const response = await fetchWithTimeout(url, {}, 5000); // 设置5秒超时
+    const response = await fetchWithTimeout(url, {}, 20000); // 设置5秒超时
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -87,20 +88,37 @@ function getTextFromHTML(htmlString: string | null): string {
 
 async function fetchWithTimeout(
   url: string,
-  options: any = {},
+  options: AxiosRequestConfig = {},
   timeout: number = 20000
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  options.signal = controller.signal;
+): Promise<AxiosResponse<any>> {
+  const source = axios.CancelToken.source();
+
+  const timeoutId = setTimeout(() => {
+    source.cancel(`Request to ${url} timed out after ${timeout}ms`);
+  }, timeout);
+
+  // 模拟 Chrome 浏览器的常见 headers
+  options.headers = {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    Accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    ...options.headers, // 合并用户自定义 headers
+  };
+
+  options.cancelToken = source.token;
 
   try {
-    const response = await fetch(url, options);
+    const response = await axios(url, options);
     clearTimeout(timeoutId);
     return response;
   } catch (error: any) {
-    if (error.name === "AbortError") {
-      console.error(`Request to ${url} timed out after ${timeout}ms`);
+    if (axios.isCancel(error)) {
+      console.error(error.message); // 超时错误信息
     } else {
       console.error(`Request to ${url} failed:`, error.message);
     }
