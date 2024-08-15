@@ -88,7 +88,7 @@ function getTextFromHTML(htmlString: string | null): string {
 async function fetchWithTimeout(
   url: string,
   options: any = {},
-  timeout: number = 5000
+  timeout: number = 20000
 ): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
