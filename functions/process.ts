@@ -7,6 +7,8 @@ import * as cheerio from "cheerio";
 import { markJobAsFailed, markJobAsSuccess } from "@/utils/dynamoDBHelper";
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
+const retryCount = 5;
+
 declare module "sst/node/job" {
   export interface JobTypes {
     process: {
@@ -48,19 +50,27 @@ function columnToLetter(column: number): string {
 
 async function fetchHTML(url: string): Promise<string | null> {
   if (!isValidURL(url)) {
-    return null;
+    return "invalid url";
   }
 
-  try {
-    const response = await fetchWithTimeout(url, {}, 20000); // 设置5秒超时
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  let attempts = 0;
+  while (attempts < retryCount) {
+    try {
+      const response = await fetchWithTimeout(url, {}, 600000);
+      return response.data;
+    } catch (error: any) {
+      attempts++;
+      console.error(
+        `Attempt ${attempts} failed to fetch URL: ${url}`,
+        error.message
+      );
+      // You can add a delay between retries here if needed
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Example: 1-second delay
     }
-    return await response.text();
-  } catch (error: any) {
-    console.error(`Failed to fetch URL: ${url}`, error.message);
-    return null; // 如果获取失败，返回 null
   }
+
+  console.error(`Failed to fetch URL: ${url} after ${retryCount} attempts`);
+  return null;
 }
 
 function getTextFromHTML(htmlString: string | null): string {
@@ -89,7 +99,7 @@ function getTextFromHTML(htmlString: string | null): string {
 async function fetchWithTimeout(
   url: string,
   options: AxiosRequestConfig = {},
-  timeout: number = 20000
+  timeout: number = 600000
 ): Promise<AxiosResponse<any>> {
   const source = axios.CancelToken.source();
 
